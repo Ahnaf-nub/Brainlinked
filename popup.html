@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="brainrot-container">
+        <!-- Header -->
+        <header class="app-header">
+            <h1 class="app-title">Brain Rot Detector</h1>
+            <div class="theme-switch">
+                <input type="checkbox" id="darkmode-toggle"/>
+                <label for="darkmode-toggle"></label>
+            </div>
+        </header>
+
+        <!-- Stats Dashboard -->
+        <div class="stats-card">
+            <h2>Brain Rot Statistics</h2>
+            <div class="stats-grid">
+                <div class="stat-item">
+                    <span class="stat-label">Brain Rot Level</span>
+                    <div class="rot-meter" id="rot-meter">🧠 Loading...</div>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Viral Slang Used</span>
+                    <span class="counter" id="slang-counter">0 fr fr</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">NPC Mode</span>
+                    <span class="counter" id="npc-level">0%</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Rizz Rating</span>
+                    <span class="counter" id="rizz-score">No rizz</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="quick-actions">
+            <button class="action-btn meme-btn" id="meme-btn">
+                <span class="icon">🤪</span>
+                Meme Radar
+            </button>
+            <button class="action-btn cringe-btn" id="cringe-btn">
+                <span class="icon">💀</span>
+                Cringe Calc
+            </button>
+            <button class="action-btn npc-btn" id="npc-btn">
+                <span class="icon">🤖</span>
+                NPC Mode
+            </button>
+            <button class="action-btn damage-btn" id="damage-btn">
+                <span class="icon">🧟</span>
+                Brain Damage
+            </button>
+        </div>
+    </div>
+    <script src="popup.js"></script>
+</body>
+</html>

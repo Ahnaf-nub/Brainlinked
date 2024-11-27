@@ -1,0 +1,27 @@
+{
+    "manifest_version": 3,
+    "name": "Brain Rot Detector",
+    "version": "1.0",
+    "description": "A Chrome extension to block hustle culture posts and improve productivity.",
+    "permissions": [
+        "storage",
+        "activeTab",
+        "scripting"
+    ],
+    "action": {
+        "default_popup": "popup.html"
+    },
+    "content_scripts": [
+        {
+            "matches": ["<all_urls>"],
+            "js": ["content.js"],
+            "css": ["styles.css"]
+        }
+    ],
+    "web_accessible_resources": [
+        {
+            "resources": ["meme-overlay.html"],
+            "matches": ["<all_urls>"]
+        }
+    ]
+}
