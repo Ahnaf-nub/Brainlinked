@@ -5,43 +5,40 @@ class BrainRotDetector {
             timeSaved: 0,
             siteStats: {},
             slangUsed: 0,
-            brainRotLevel: 0
+            slangTypes: {},
+            brainRotLevel: 0,
+            auraScore: 0,
+            auraLabel: 'L Aura'
         };
         this.startTime = Date.now();
         this.memeVocab = [
-            'fr fr', 'no cap', 'bussin', 'skibidi', 'rizz',
-            'gyatt', 'based', 'sheesh', 'sigma'
+            'fr fr', 'no cap', 'bussin', 'skibidi', 'aura',
+            'gyatt', 'based', 'sheesh', 'sigma', 'rizz', 'grimace shake',
+            'still water', 'fanum tax', 'those who know', 'ohio'
         ];
         this.socialMediaDomains = {
             'linkedin.com': 'LinkedIn',
-            'www.linkedin.com': 'LinkedIn',
             'facebook.com': 'Facebook',
-            'www.facebook.com': 'Facebook',
-            'instagram.com': 'Instagram',
-            'www.instagram.com': 'Instagram'
+            'instagram.com': 'Instagram'
         };
         this.slangSuggestions = {
             'fr': ['fr fr', 'frfr'],
             'no': ['no cap', 'no shot'],
             'bu': ['bussin'],
             'sk': ['skibidi'],
-            'ri': ['rizz', 'rizzy'],
+            'au': ['aura', 'aura master'],
             'gy': ['gyatt'],
             'ba': ['based'],
             'sh': ['sheesh'],
-            'ba': ['balkan rage'],
             'si': ['sigma'],
-            'gri': ['grimace shake'],
+            'gr': ['grimace shake'],
             'oh': ['ohio'],
             'fa': ['fanum tax'],
             'th': ['those who know'],
-            'st': ['still water'],
+            'st': ['still water']
         };
-        this.isScanning = false;
-        this.initialized = false;
-
-        this.rizzWeights = {
-            'rizz': 2.0,
+        this.auraWeights = {
+            'Aura': 2.0,
             'based': 1.5,
             'fr fr': 1.2,
             'no cap': 1.2,
@@ -50,14 +47,15 @@ class BrainRotDetector {
             'W': 1.3,
             'lowkey': 1.1
         };
-        
-        this.rizzCategories = [
-            { threshold: 0, label: 'No rizz' },
-            { threshold: 30, label: 'Lowkey rizz' },
-            { threshold: 50, label: 'Mid rizz' },
-            { threshold: 70, label: 'W rizz' },
-            { threshold: 90, label: 'Maximum rizz' }
+        this.auraCategories = [
+            { threshold: 90, label: 'Infinite Aura' },
+            { threshold: 70, label: 'W Aura' },
+            { threshold: 50, label: 'Mid Aura' },
+            { threshold: 30, label: 'Lowkey Aura' },
+            { threshold: 0, label: 'No Aura' }
         ];
+        this.isScanning = false;
+        this.initialized = false;
 
         // Handle overlay close messages
         window.addEventListener('message', (event) => {
@@ -75,10 +73,10 @@ class BrainRotDetector {
 
     async initialize() {
         if (this.initialized) return;
-        
+
         await this.loadSettings();
         this.setupMessageListener();
-        
+
         // Special handling for LinkedIn
         if (window.location.hostname.includes('linkedin.com')) {
             await new Promise(resolve => {
@@ -92,7 +90,7 @@ class BrainRotDetector {
                 checkFeed();
             });
         }
-        
+
         try {
             this.setupObserver();
             this.trackTimeSpent();
@@ -104,22 +102,26 @@ class BrainRotDetector {
     }
 
     setupMessageListener() {
-        chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-            if (request.action === 'scanForMemes') {
-                this.scanContent();
-                sendResponse({success: true});
-            }
-            if (request.action === 'getStats') {
-                sendResponse({stats: this.stats});
-            }
-            return true;
-        });
+        if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.onMessage) {
+            chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
+                if (request.action === 'scanForMemes') {
+                    this.scanContent();
+                    sendResponse({ success: true });
+                }
+                if (request.action === 'getStats') {
+                    sendResponse({ stats: this.stats });
+                }
+                return true;
+            });
+        } else {
+            console.warn('BrainRotDetector: chrome.runtime.onMessage is undefined');
+        }
     }
 
     setupObserver() {
         if (this.observer) return;
-        
-        this.observer = new MutationObserver((mutations) => {
+
+        this.observer = new MutationObserver(() => {
             if (!this.isScanning && !this.debounceTimer) {
                 this.debounceTimer = setTimeout(() => {
                     this.scanContent();
@@ -144,7 +146,7 @@ class BrainRotDetector {
         this.isScanning = true;
 
         try {
-            const visibleText = document.visibleText || document.body.innerText;
+            const visibleText = document.body.innerText || '';
             let memeCount = 0;
             const slangTypes = this.stats.slangTypes || {};
 
@@ -161,12 +163,12 @@ class BrainRotDetector {
                 this.stats.slangUsed += memeCount;
                 this.stats.slangTypes = slangTypes;
                 this.stats.brainRotLevel = Math.min(100, this.stats.slangUsed * 5);
-                
-                // Calculate rizz
-                const rizzResult = this.calculateRizzLevel();
-                this.stats.rizzScore = rizzResult.score;
-                this.stats.rizzLabel = rizzResult.label;
-                
+
+                // Calculate aura
+                const auraResult = this.calculateAuraLevel();
+                this.stats.auraScore = auraResult.score;
+                this.stats.auraLabel = auraResult.label;
+
                 this.updateStats();
             }
         } catch (error) {
@@ -176,46 +178,44 @@ class BrainRotDetector {
         }
     }
 
-    calculateRizzLevel() {
-        let rizzScore = 0;
-        
+    calculateAuraLevel() {
+        let auraScore = 0;
+
         // Base score from slang usage
-        rizzScore += Math.min(50, this.stats.slangUsed * 2);
-        
+        auraScore += Math.min(50, this.stats.slangUsed * 2);
+
         // Weighted score based on specific slang types
         Object.entries(this.stats.slangTypes || {}).forEach(([word, count]) => {
-            if (this.rizzWeights[word]) {
-                rizzScore += count * this.rizzWeights[word];
+            if (this.auraWeights[word]) {
+                auraScore += count * this.auraWeights[word];
             }
         });
-        
+
         // Penalty for excessive social media time
         const totalSocialTime = Object.values(this.stats.siteStats)
             .reduce((sum, site) => sum + (site.timeSpent || 0), 0);
         const timePenalty = Math.max(0, (totalSocialTime - 30) * 0.5); // Penalty after 30 mins
-        rizzScore = Math.max(0, rizzScore - timePenalty);
-        
+        auraScore = Math.max(0, auraScore - timePenalty);
+
         // Cap at 100
-        rizzScore = Math.min(100, rizzScore);
-        
-        // Get rizz category
-        const rizzCategory = this.rizzCategories
-            .slice()
-            .reverse()
-            .find(cat => rizzScore >= cat.threshold);
-            
+        auraScore = Math.min(100, auraScore);
+
+        // Get aura category
+        const auraCategory = this.auraCategories
+            .find(cat => auraScore >= cat.threshold);
+
         return {
-            score: rizzScore,
-            label: rizzCategory.label
+            score: auraScore,
+            label: auraCategory ? auraCategory.label : 'No Aura'
         };
     }
 
     trackTimeSpent() {
         setInterval(() => {
-            const domain = window.location.hostname;
+            const domain = window.location.hostname.replace('www.', '');
             if (this.socialMediaDomains[domain]) {
                 const timeSpent = Math.floor((Date.now() - this.startTime) / 1000 / 60);
-                
+
                 if (!this.stats.siteStats[domain]) {
                     this.stats.siteStats[domain] = { timeSpent: 0 };
                 }
@@ -234,28 +234,30 @@ class BrainRotDetector {
     }
 
     showOverlay(page) {
-        chrome.storage.local.get(['lastOverlayShow'], (result) => {
-            const lastShow = result.lastOverlayShow || 0;
-            const now = Date.now();
-            
-            if (now - lastShow >= 30 * 60 * 1000) {
-                const overlay = document.createElement('iframe');
-                overlay.src = chrome.runtime.getURL(page);
-                overlay.style.cssText = `
-                    position: fixed;
-                    top: 0;
-                    left: 0;
-                    width: 100%;
-                    height: 100%;
-                    border: none;
-                    z-index: 99999;
-                    background: transparent;
-                `;
-                
-                document.body.appendChild(overlay);
-                chrome.storage.local.set({ lastOverlayShow: now });
-            }
-        });
+        if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.getURL) {
+            chrome.storage.local.get(['lastOverlayShow'], (result) => {
+                const lastShow = result.lastOverlayShow || 0;
+                const now = Date.now();
+
+                if (now - lastShow >= 30 * 60 * 1000) {
+                    const overlay = document.createElement('iframe');
+                    overlay.src = chrome.runtime.getURL(page);
+                    overlay.style.cssText = `
+                        position: fixed;
+                        top: 0;
+                        left: 0;
+                        width: 100%;
+                        height: 100%;
+                        border: none;
+                        z-index: 99999;
+                        background: transparent;
+                    `;
+
+                    document.body.appendChild(overlay);
+                    chrome.storage.local.set({ lastOverlayShow: now });
+                }
+            });
+        }
     }
 
     removeOverlay(page) {
@@ -265,7 +267,7 @@ class BrainRotDetector {
 
     setupInputMonitoring() {
         document.addEventListener('input', (e) => {
-            if (e.target.matches && e.target.matches('input[type="text"], textarea, [contenteditable="true"]')) {
+            if (e.target.matches('input[type="text"], textarea, [contenteditable="true"]')) {
                 this.handleInputChange(e.target);
             }
         }, true);
@@ -303,8 +305,8 @@ class BrainRotDetector {
         `;
 
         const rect = element.getBoundingClientRect();
-        suggestionBox.style.top = `${rect.bottom + 5}px`;
-        suggestionBox.style.left = `${rect.left}px`;
+        suggestionBox.style.top = `${rect.bottom + window.scrollY + 5}px`;
+        suggestionBox.style.left = `${rect.left + window.scrollX}px`;
         suggestionBox.style.minWidth = `${rect.width}px`;
 
         suggestions.forEach(suggestion => {
@@ -329,23 +331,31 @@ class BrainRotDetector {
     }
 
     updateStats() {
-        chrome.storage.local.set({ stats: this.stats }, () => {
-            chrome.runtime.sendMessage({
-                action: 'statsUpdated',
-                stats: this.stats
+        if (typeof chrome !== 'undefined' && chrome.storage) {
+            chrome.storage.local.set({ stats: this.stats }, () => {
+                if (chrome.runtime && chrome.runtime.sendMessage) {
+                    chrome.runtime.sendMessage({
+                        action: 'statsUpdated',
+                        stats: this.stats
+                    });
+                }
             });
-        });
+        }
     }
 
     loadSettings() {
-        return new Promise((resolve) => {
-            chrome.storage.local.get(['stats'], (result) => {
-                if (result.stats) {
-                    this.stats = {...this.stats, ...result.stats};
-                }
-                resolve();
+        if (typeof chrome !== 'undefined' && chrome.storage) {
+            return new Promise((resolve) => {
+                chrome.storage.local.get(['stats'], (result) => {
+                    if (result.stats) {
+                        this.stats = { ...this.stats, ...result.stats };
+                    }
+                    resolve();
+                });
             });
-        });
+        } else {
+            return Promise.resolve();
+        }
     }
 
     cleanup() {
@@ -365,48 +375,3 @@ detector.initialize().catch(console.error);
 window.addEventListener('load', () => {
     detector.initialize().catch(console.error);
 });
-
-// Update background.js initial stats
-chrome.runtime.onInstalled.addListener(() => {
-    chrome.storage.local.get(['stats'], (result) => {
-        if (!result.stats) {
-            chrome.storage.local.set({
-                stats: {
-                    timeSaved: 0,
-                    siteStats: {},
-                    slangUsed: 0,
-                    slangTypes: {},
-                    brainRotLevel: 0,
-                    rizzScore: 0,
-                    rizzLabel: 'No rizz'
-                }
-            });
-        }
-    });
-});
-
-// Update popup.js stats display
-function updateStatsDisplay(stats) {
-    if (!stats) return;
-    
-    const elements = {
-        'rot-meter': `${stats.brainRotLevel || 0}%`,
-        'slang-counter': `${stats.slangUsed || 0} fr fr`,
-        'rizz-score': stats.rizzLabel || 'No rizz'
-    };
-
-    Object.entries(elements).forEach(([id, value]) => {
-        const element = document.getElementById(id);
-        if (element) {
-            element.textContent = value;
-            // Add color coding for rizz level
-            if (id === 'rizz-score') {
-                const rizzColor = stats.rizzScore >= 90 ? '#7C3AED' :
-                                stats.rizzScore >= 70 ? '#3B82F6' :
-                                stats.rizzScore >= 50 ? '#10B981' :
-                                stats.rizzScore >= 30 ? '#F59E0B' : '#6B7280';
-                element.style.color = rizzColor;
-            }
-        }
-    });
-}

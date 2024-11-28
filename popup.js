@@ -1,4 +1,3 @@
-// popup.js
 let retryCount = 0;
 const MAX_RETRIES = 3;
 
