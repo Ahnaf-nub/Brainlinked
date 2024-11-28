@@ -14,6 +14,11 @@
   --shadow-dark: 0 4px 20px rgba(0,0,0,0.3);
 }
 
+body[data-theme="dark"] {
+  background: var(--bg-dark);
+  color: var(--text-dark);
+}
+
 .app-title {
   font-size: 1.25rem;
   font-weight: 600;
@@ -32,6 +37,12 @@
   background: var(--bg-light);
   border-radius: var(--border-radius);
   transition: all 0.3s ease;
+}
+
+body[data-theme="dark"] .brainrot-container {
+  background: var(--bg-dark);
+  color: var(--text-dark);
+  box-shadow: var(--shadow-dark);
 }
 
 .app-header {
@@ -251,8 +262,7 @@
 /* Animation */
 @keyframes toggleMove {
   0% { transform: scale(1); }
-  50% { transform: scale(0.9); }
-  100% { transform: scale(1); }
+  100% { transform: scale(1.05); }
 }
 
 .theme-switch label:active:before {

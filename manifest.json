@@ -8,6 +8,9 @@
         "activeTab",
         "scripting"
     ],
+    "background": {
+        "service_worker": "background.js"
+    },
     "action": {
         "default_popup": "popup.html"
     },
@@ -15,12 +18,13 @@
         {
             "matches": ["<all_urls>"],
             "js": ["content.js"],
-            "css": ["styles.css"]
+            "css": ["styles.css"],
+            "run_at": "document_end"
         }
     ],
     "web_accessible_resources": [
         {
-            "resources": ["meme-overlay.html"],
+            "resources": ["meme-overlay.html", "chill.png"],
             "matches": ["<all_urls>"]
         }
     ]
