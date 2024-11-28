@@ -8,7 +8,6 @@
             font-family: 'Arial', sans-serif;
             background: #1a1a1a;
         }
-
         .overlay {
             position: fixed;
             top: 0;
@@ -35,8 +34,8 @@
         }
 
         .meme-img {
-            width: 100%;
-            max-width: 400px;
+            width: 90%; /* Reduced the width */
+            max-width: 360px; /* Reduced the max-width */
             border-radius: 12px;
             box-shadow: 0 5px 15px rgba(0,0,0,0.3);
             transition: transform 0.3s ease;
@@ -67,9 +66,10 @@
         }
 
         #meme-message {
-            color: #aaa;
+            color: #d8d6d6;
             line-height: 1.6;
             margin-top: 20px;
+            font-size: 18px; /* Increased the font size */
         }
 
         @keyframes fadeIn {
@@ -98,6 +98,5 @@
             <p id="meme-message">Stay cool and keep vibing!</p>
         </div>
     </div>
-    <script src="meme-overlay.js"></script>
 </body>
 </html>

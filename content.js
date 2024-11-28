@@ -5,40 +5,72 @@ class BrainRotDetector {
             timeSaved: 0,
             siteStats: {},
             slangUsed: 0,
-            brainRotLevel: 0,
-            brainCells: 3
+            brainRotLevel: 0
         };
         this.startTime = Date.now();
         this.memeVocab = [
             'fr fr', 'no cap', 'bussin', 'skibidi', 'rizz',
-            'gyatt', 'based', 'L', 'sus', 'sheesh', 'sigma'
+            'gyatt', 'based', 'sheesh', 'sigma'
         ];
         this.socialMediaDomains = {
             'linkedin.com': 'LinkedIn',
-            'www.linkedin.com': 'LinkedIn'
+            'www.linkedin.com': 'LinkedIn',
+            'facebook.com': 'Facebook',
+            'www.facebook.com': 'Facebook',
+            'instagram.com': 'Instagram',
+            'www.instagram.com': 'Instagram'
+        };
+        this.slangSuggestions = {
+            'fr': ['fr fr', 'frfr'],
+            'no': ['no cap', 'no shot'],
+            'bu': ['bussin'],
+            'sk': ['skibidi'],
+            'ri': ['rizz', 'rizzy'],
+            'gy': ['gyatt'],
+            'ba': ['based'],
+            'sh': ['sheesh'],
+            'ba': ['balkan rage'],
+            'si': ['sigma'],
+            'gri': ['grimace shake'],
+            'oh': ['ohio'],
+            'fa': ['fanum tax'],
+            'th': ['those who know'],
+            'st': ['still water'],
         };
         this.isScanning = false;
         this.initialized = false;
 
-        // Enhanced meme overlay handler
-        this.boundMessageHandler = this.handleMessage.bind(this);
-        window.addEventListener('message', this.boundMessageHandler);
-    }
+        this.rizzWeights = {
+            'rizz': 2.0,
+            'based': 1.5,
+            'fr fr': 1.2,
+            'no cap': 1.2,
+            'gyatt': 1.8,
+            'sigma': 1.5,
+            'W': 1.3,
+            'lowkey': 1.1
+        };
+        
+        this.rizzCategories = [
+            { threshold: 0, label: 'No rizz' },
+            { threshold: 30, label: 'Lowkey rizz' },
+            { threshold: 50, label: 'Mid rizz' },
+            { threshold: 70, label: 'W rizz' },
+            { threshold: 90, label: 'Maximum rizz' }
+        ];
 
-    handleMessage(event) {
-        if (event.data === 'closeMeme') {
-            this.removeOverlay();
-        }
-    }
+        // Handle overlay close messages
+        window.addEventListener('message', (event) => {
+            if (event.data === 'closeMeme') {
+                this.removeOverlay('meme-overlay.html');
+            }
+            if (event.data === 'closeGrass') {
+                this.removeOverlay('touch-grass.html');
+            }
+        });
 
-    removeOverlay() {
-        const overlay = document.querySelector('iframe[src*="meme-overlay.html"]');
-        if (overlay) {
-            overlay.remove();
-            // Clean up any related styles/elements
-            const cleanup = document.querySelectorAll('.meme-overlay-backdrop');
-            cleanup.forEach(el => el.remove());
-        }
+        // Setup input monitoring
+        this.setupInputMonitoring();
     }
 
     async initialize() {
@@ -49,7 +81,6 @@ class BrainRotDetector {
         
         // Special handling for LinkedIn
         if (window.location.hostname.includes('linkedin.com')) {
-            // Wait for feed to load
             await new Promise(resolve => {
                 const checkFeed = () => {
                     if (document.querySelector('.core-rail, .feed-shared-update-v2')) {
@@ -63,7 +94,7 @@ class BrainRotDetector {
         }
         
         try {
-            await this.setupObserver();
+            this.setupObserver();
             this.trackTimeSpent();
             this.initialized = true;
         } catch (error) {
@@ -88,114 +119,95 @@ class BrainRotDetector {
     setupObserver() {
         if (this.observer) return;
         
-        // Create a more efficient observer
         this.observer = new MutationObserver((mutations) => {
             if (!this.isScanning && !this.debounceTimer) {
                 this.debounceTimer = setTimeout(() => {
-                    this.scanForMemes(mutations);
+                    this.scanContent();
                     this.debounceTimer = null;
-                }, 1000); // Debounce by 1 second
+                }, 2000);
             }
         });
 
         try {
-            // Only observe main content areas on LinkedIn
-            if (window.location.hostname.includes('linkedin.com')) {
-                const mainContent = document.querySelector('.core-rail, .feed-shared-update-v2');
-                if (mainContent) {
-                    this.observer.observe(mainContent, {
-                        childList: true,
-                        subtree: true,
-                        characterData: true
-                    });
-                } else {
-                    // Fallback to body with reduced subtree depth
-                    this.observer.observe(document.body, {
-                        childList: true,
-                        subtree: false
-                    });
-                }
-            } else {
-                // Normal observation for other sites
-                this.observer.observe(document.body, {
-                    childList: true,
-                    subtree: true,
-                    characterData: true
-                });
-            }
+            this.observer.observe(document.body, {
+                childList: true,
+                subtree: true,
+                characterData: true
+            });
         } catch (error) {
             console.warn('BrainRotDetector: Observer setup failed', error);
         }
     }
 
-    scanForMemes(mutations) {
+    scanContent() {
         if (this.isScanning) return;
         this.isScanning = true;
 
         try {
-            // On LinkedIn, only scan visible viewport
-            if (window.location.hostname.includes('linkedin.com')) {
-                const visibleText = Array.from(document.querySelectorAll('.feed-shared-update-v2'))
-                    .filter(el => this.isElementInViewport(el))
-                    .map(el => el.textContent)
-                    .join(' ')
-                    .toLowerCase();
+            const visibleText = document.visibleText || document.body.innerText;
+            let memeCount = 0;
+            const slangTypes = this.stats.slangTypes || {};
+
+            this.memeVocab.forEach(word => {
+                const regex = new RegExp(word, 'gi');
+                const matches = (visibleText.match(regex) || []).length;
+                if (matches > 0) {
+                    memeCount += matches;
+                    slangTypes[word] = (slangTypes[word] || 0) + matches;
+                }
+            });
+
+            if (memeCount > 0) {
+                this.stats.slangUsed += memeCount;
+                this.stats.slangTypes = slangTypes;
+                this.stats.brainRotLevel = Math.min(100, this.stats.slangUsed * 5);
                 
-                this.memeVocab.forEach(word => {
-                    if (visibleText.includes(word)) {
-                        this.stats.slangUsed++;
-                        this.updateStats();
-                        this.showMemeAlert(word);
-                    }
-                });
-            } else {
-                // Normal scanning for other sites
-                mutations.forEach(mutation => {
-                    if (mutation.type === 'characterData' || mutation.type === 'childList') {
-                        const text = mutation.target.textContent?.toLowerCase() || '';
-                        if (text.length > 3) {
-                            this.memeVocab.forEach(word => {
-                                if (text.includes(word)) {
-                                    this.stats.slangUsed++;
-                                    this.updateStats();
-                                    this.showMemeAlert(word);
-                                }
-                            });
-                        }
-                    }
-                });
+                // Calculate rizz
+                const rizzResult = this.calculateRizzLevel();
+                this.stats.rizzScore = rizzResult.score;
+                this.stats.rizzLabel = rizzResult.label;
+                
+                this.updateStats();
             }
         } catch (error) {
             console.warn('BrainRotDetector: Non-critical scan error', error);
+        } finally {
+            this.isScanning = false;
         }
-
-        this.isScanning = false;
     }
 
-    // Helper method to check if element is in viewport
-    isElementInViewport(el) {
-        const rect = el.getBoundingClientRect();
-        return (
-            rect.top >= 0 &&
-            rect.left >= 0 &&
-            rect.bottom <= (window.innerHeight || document.documentElement.clientHeight) &&
-            rect.right <= (window.innerWidth || document.documentElement.clientWidth)
-        );
-    }
-
-    scanContent() {
-        // Only scan visible content
-        const visibleText = document.visibleText || document.body.innerText;
-        let memeCount = 0;
-
-        this.memeVocab.forEach(word => {
-            const regex = new RegExp(word, 'gi');
-            const matches = (visibleText.match(regex) || []).length;
-            memeCount += matches;
+    calculateRizzLevel() {
+        let rizzScore = 0;
+        
+        // Base score from slang usage
+        rizzScore += Math.min(50, this.stats.slangUsed * 2);
+        
+        // Weighted score based on specific slang types
+        Object.entries(this.stats.slangTypes || {}).forEach(([word, count]) => {
+            if (this.rizzWeights[word]) {
+                rizzScore += count * this.rizzWeights[word];
+            }
         });
-
-        this.stats.slangUsed = memeCount;
-        this.updateStats();
+        
+        // Penalty for excessive social media time
+        const totalSocialTime = Object.values(this.stats.siteStats)
+            .reduce((sum, site) => sum + (site.timeSpent || 0), 0);
+        const timePenalty = Math.max(0, (totalSocialTime - 30) * 0.5); // Penalty after 30 mins
+        rizzScore = Math.max(0, rizzScore - timePenalty);
+        
+        // Cap at 100
+        rizzScore = Math.min(100, rizzScore);
+        
+        // Get rizz category
+        const rizzCategory = this.rizzCategories
+            .slice()
+            .reverse()
+            .find(cat => rizzScore >= cat.threshold);
+            
+        return {
+            score: rizzScore,
+            label: rizzCategory.label
+        };
     }
 
     trackTimeSpent() {
@@ -209,25 +221,26 @@ class BrainRotDetector {
                 }
                 this.stats.siteStats[domain].timeSpent = timeSpent;
 
-                // Only show meme overlay after 5 minutes on LinkedIn
-                if (timeSpent >= 5 && domain.includes('linkedin.com')) {
-                    this.showChillMeme();
+                if (timeSpent >= 5) {
+                    if (domain.includes('linkedin.com')) {
+                        this.showOverlay('meme-overlay.html');
+                    } else if (domain.includes('facebook.com') || domain.includes('instagram.com')) {
+                        this.showOverlay('touch-grass.html');
+                    }
                 }
                 this.updateStats();
             }
-        }, 60000); // Check every minute
+        }, 60000);
     }
 
-    showChillMeme() {
-        // Check if meme was already shown
-        chrome.storage.local.get(['lastMemeShow'], (result) => {
-            const lastShow = result.lastMemeShow || 0;
+    showOverlay(page) {
+        chrome.storage.local.get(['lastOverlayShow'], (result) => {
+            const lastShow = result.lastOverlayShow || 0;
             const now = Date.now();
             
-            // Show meme only if 30 minutes have passed since last show
             if (now - lastShow >= 30 * 60 * 1000) {
                 const overlay = document.createElement('iframe');
-                overlay.src = chrome.runtime.getURL('meme-overlay.html');
+                overlay.src = chrome.runtime.getURL(page);
                 overlay.style.cssText = `
                     position: fixed;
                     top: 0;
@@ -239,82 +252,80 @@ class BrainRotDetector {
                     background: transparent;
                 `;
                 
-                // Add backdrop for click-outside closing
-                const backdrop = document.createElement('div');
-                backdrop.className = 'meme-overlay-backdrop';
-                backdrop.style.cssText = `
-                    position: fixed;
-                    top: 0;
-                    left: 0;
-                    width: 100%;
-                    height: 100%;
-                    background: rgba(0,0,0,0.5);
-                    z-index: 99998;
-                `;
-                backdrop.addEventListener('click', () => this.removeOverlay());
-                
-                document.body.appendChild(backdrop);
                 document.body.appendChild(overlay);
-                
-                // Save last show time
-                chrome.storage.local.set({ lastMemeShow: now });
+                chrome.storage.local.set({ lastOverlayShow: now });
             }
         });
     }
 
-    detectTrendingWords() {
-        const observer = new MutationObserver(() => {
-            const text = document.body.innerText.toLowerCase();
-            this.detectMemeLanguage(text);
-        });
-        observer.observe(document.body, { childList: true, subtree: true });
+    removeOverlay(page) {
+        const overlay = document.querySelector(`iframe[src*="${page}"]`);
+        if (overlay) overlay.remove();
     }
 
-    detectMemeLanguage(text) {
-        this.memeVocab.forEach(word => {
-            if (text.includes(word)) {
-                this.showMemeAlert(word);
-                // Increment slang usage count
-                this.stats.slangUsed++;
-                
-                // Calculate brain rot level (0-100%)
-                const brainRotLevel = Math.min(100, (this.stats.slangUsed * 5));
-                
-                // Update stats with new values
-                this.stats = {
-                    ...this.stats,
-                    brainRotLevel: brainRotLevel,
-                    brainCells: Math.max(0, 3 - Math.floor(brainRotLevel / 33)) // Lose brain cells as rot increases
-                };
-                
-                // Update stats in storage
-                this.updateStats();
-                
-                // Show critical warning if brain rot is too high
-                if (brainRotLevel >= 90) {
-                    this.showChillMeme(); // Show intervention meme
-                }
+    setupInputMonitoring() {
+        document.addEventListener('input', (e) => {
+            if (e.target.matches && e.target.matches('input[type="text"], textarea, [contenteditable="true"]')) {
+                this.handleInputChange(e.target);
+            }
+        }, true);
+    }
+
+    handleInputChange(element) {
+        const text = element.value || element.textContent;
+        if (!text) return;
+
+        const words = text.split(' ');
+        const lastWord = words[words.length - 1].toLowerCase();
+
+        Object.entries(this.slangSuggestions).forEach(([prefix, suggestions]) => {
+            if (lastWord.startsWith(prefix) && lastWord.length >= 2) {
+                this.showSlangSuggestions(element, suggestions);
             }
         });
     }
 
-    showMemeAlert(word) {
-        const alert = document.createElement('div');
-        alert.className = 'meme-alert';
-        alert.style.cssText = `
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            background: rgba(0,0,0,0.8);
-            color: white;
-            padding: 10px 20px;
+    showSlangSuggestions(element, suggestions) {
+        this.removeSlangSuggestions();
+
+        const suggestionBox = document.createElement('div');
+        suggestionBox.className = 'brainrot-suggestions';
+        suggestionBox.style.cssText = `
+            position: absolute;
+            background: #1f1f1f;
+            border: 1px solid #7C3AED;
             border-radius: 8px;
-            z-index: 9999;
-            animation: fadeIn 0.3s ease-in-out;
+            padding: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            z-index: 99999;
+            max-height: 200px;
+            overflow-y: auto;
         `;
-        alert.innerHTML = `🔥 "${word}" detected!`;
-        document.body.appendChild(alert);
-        setTimeout(() => alert.remove(), 2000);
+
+        const rect = element.getBoundingClientRect();
+        suggestionBox.style.top = `${rect.bottom + 5}px`;
+        suggestionBox.style.left = `${rect.left}px`;
+        suggestionBox.style.minWidth = `${rect.width}px`;
+
+        suggestions.forEach(suggestion => {
+            const item = document.createElement('div');
+            item.className = 'brainrot-suggestion-item';
+            item.textContent = suggestion;
+            item.style.cssText = `
+                padding: 8px 12px;
+                color: #fff;
+                border-radius: 4px;
+            `;
+            suggestionBox.appendChild(item);
+        });
+
+        document.body.appendChild(suggestionBox);
+        setTimeout(() => this.removeSlangSuggestions(), 3000);
+    }
+
+    removeSlangSuggestions() {
+        const existing = document.querySelector('.brainrot-suggestions');
+        if (existing) existing.remove();
     }
 
     updateStats() {
@@ -337,10 +348,12 @@ class BrainRotDetector {
         });
     }
 
-    // Clean up when done
     cleanup() {
-        window.removeEventListener('message', this.boundMessageHandler);
-        this.removeOverlay();
+        if (this.observer) {
+            this.observer.disconnect();
+        }
+        this.removeOverlay('meme-overlay.html');
+        this.removeOverlay('touch-grass.html');
     }
 }
 
@@ -352,3 +365,48 @@ detector.initialize().catch(console.error);
 window.addEventListener('load', () => {
     detector.initialize().catch(console.error);
 });
+
+// Update background.js initial stats
+chrome.runtime.onInstalled.addListener(() => {
+    chrome.storage.local.get(['stats'], (result) => {
+        if (!result.stats) {
+            chrome.storage.local.set({
+                stats: {
+                    timeSaved: 0,
+                    siteStats: {},
+                    slangUsed: 0,
+                    slangTypes: {},
+                    brainRotLevel: 0,
+                    rizzScore: 0,
+                    rizzLabel: 'No rizz'
+                }
+            });
+        }
+    });
+});
+
+// Update popup.js stats display
+function updateStatsDisplay(stats) {
+    if (!stats) return;
+    
+    const elements = {
+        'rot-meter': `${stats.brainRotLevel || 0}%`,
+        'slang-counter': `${stats.slangUsed || 0} fr fr`,
+        'rizz-score': stats.rizzLabel || 'No rizz'
+    };
+
+    Object.entries(elements).forEach(([id, value]) => {
+        const element = document.getElementById(id);
+        if (element) {
+            element.textContent = value;
+            // Add color coding for rizz level
+            if (id === 'rizz-score') {
+                const rizzColor = stats.rizzScore >= 90 ? '#7C3AED' :
+                                stats.rizzScore >= 70 ? '#3B82F6' :
+                                stats.rizzScore >= 50 ? '#10B981' :
+                                stats.rizzScore >= 30 ? '#F59E0B' : '#6B7280';
+                element.style.color = rizzColor;
+            }
+        }
+    });
+}

@@ -24,7 +24,7 @@
     ],
     "web_accessible_resources": [
         {
-            "resources": ["meme-overlay.html", "chill.png"],
+            "resources": ["meme-overlay.html", "touch-grass.html", "chill.png", "grass.png"],
             "matches": ["<all_urls>"]
         }
     ]

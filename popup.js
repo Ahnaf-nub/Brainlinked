@@ -54,17 +54,15 @@ function updateStatsDisplay(stats) {
     if (!stats) return;
     
     const elements = {
-        'rot-meter': stats.brainRotLevel || 0,
+        'rot-meter': `${stats.brainRotLevel || 0}%`,
         'slang-counter': `${stats.slangUsed || 0} fr fr`,
-        'npc-level': `${stats.npcMode || 0}%`,
-        'rizz-score': stats.rizzScore || 'No rizz'
+        'rizz-score': stats.brainRotLevel > 80 ? 'Maximum rizz' : 
+                     stats.brainRotLevel > 50 ? 'Mid rizz' : 'No rizz'
     };
 
     Object.entries(elements).forEach(([id, value]) => {
         const element = document.getElementById(id);
-        if (element) {
-            element.textContent = typeof value === 'number' ? `${value}%` : value;
-        }
+        if (element) element.textContent = value;
     });
 }
 
