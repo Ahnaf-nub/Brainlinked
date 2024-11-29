@@ -3,11 +3,8 @@
     "name": "Neurot",
     "version": "1.0",
     "description": "A Chrome extension to block hustle culture posts and improve productivity.",
-    "permissions": [
-        "storage",
-        "activeTab",
-        "scripting"
-    ],
+    "permissions": ["storage", "activeTab", "scripting"],
+    "host_permissions": ["<all_urls>"],
     "background": {
         "service_worker": "background.js"
     },
@@ -18,15 +15,13 @@
         {
             "matches": ["<all_urls>"],
             "js": ["content.js"],
-            "css": ["styles.css"],
-            "run_at": "document_end"
+            "run_at": "document_start"
         }
     ],
     "web_accessible_resources": [
         {
             "resources": [
                 "chill.png",
-                "touch-grass.html",
                 "grass.png"
             ],
             "matches": ["<all_urls>"]

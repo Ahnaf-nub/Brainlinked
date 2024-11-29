@@ -5,6 +5,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initializePopup();
     loadStatsWithRetry();
     setupEventListeners();
+    loadCustomSlang();
 });
 
 function initializePopup() {
@@ -24,17 +25,14 @@ function initializePopup() {
 }
 
 function loadStatsWithRetry() {
-    chrome.tabs.query({active: true, currentWindow: true}, (tabs) => {
+    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
         if (!tabs[0]?.id) return;
-        
-        chrome.tabs.sendMessage(tabs[0].id, {action: 'getStats'}, (response) => {
-            if (chrome.runtime.lastError) {
-                if (retryCount < MAX_RETRIES) {
-                    retryCount++;
-                    setTimeout(loadStatsWithRetry, 1000); // Retry after 1 second
-                    return;
-                }
-                // Load from storage as fallback
+
+        chrome.tabs.sendMessage(tabs[0].id, { action: 'getStats' }, (response) => {
+            if (chrome.runtime.lastError || !response) {
+                // Content script not available in this tab
+                console.warn('Content script not found in the current tab.');
+                // Optionally load stats from storage
                 chrome.storage.local.get(['stats'], (result) => {
                     if (result.stats) {
                         updateStatsDisplay(result.stats);
@@ -42,7 +40,7 @@ function loadStatsWithRetry() {
                 });
                 return;
             }
-            if (response?.stats) {
+            if (response.stats) {
                 updateStatsDisplay(response.stats);
             }
         });
@@ -55,8 +53,7 @@ function updateStatsDisplay(stats) {
     const elements = {
         'rot-meter': `${stats.brainRotLevel || 0}%`,
         'slang-counter': `${stats.slangUsed || 0} fr fr`,
-        'rizz-score': stats.brainRotLevel > 80 ? 'Maximum rizz' : 
-                     stats.brainRotLevel > 50 ? 'Mid rizz' : 'No rizz'
+        'aura-score': stats.auraLabel || 'L Aura'
     };
 
     Object.entries(elements).forEach(([id, value]) => {
@@ -66,19 +63,67 @@ function updateStatsDisplay(stats) {
 }
 
 function setupEventListeners() {
-    document.getElementById('meme-btn')?.addEventListener('click', () => {
-        chrome.tabs.query({active: true, currentWindow: true}, (tabs) => {
-            if (!tabs[0]?.id) return;
-            
-            chrome.tabs.sendMessage(tabs[0].id, {action: 'scanForMemes'}, (response) => {
-                if (chrome.runtime.lastError) {
-                    console.warn('Could not connect to content script');
-                    return;
-                }
-                if (response?.success) {
-                    loadStatsWithRetry();
-                }
+    document.getElementById('add-slang-btn').addEventListener('click', addSlangTerm);
+}
+
+function loadCustomSlang() {
+    chrome.storage.local.get(['customSlang'], (result) => {
+        const slangList = result.customSlang || [];
+        updateSlangListDisplay(slangList);
+    });
+}
+
+function updateSlangListDisplay(slangList) {
+    const slangListContainer = document.getElementById('slang-list');
+    slangListContainer.innerHTML = '';
+    slangList.forEach(term => {
+        const termEl = document.createElement('div');
+        termEl.className = 'slang-term';
+        termEl.textContent = term;
+
+        const removeBtn = document.createElement('button');
+        removeBtn.textContent = '×';
+        removeBtn.addEventListener('click', () => removeSlangTerm(term));
+
+        termEl.appendChild(removeBtn);
+        slangListContainer.appendChild(termEl);
+    });
+}
+
+function addSlangTerm() {
+    const slangInput = document.getElementById('slang-input');
+    const term = slangInput.value.trim();
+    if (!term) return;
+    chrome.storage.local.get(['customSlang'], (result) => {
+        let slangList = result.customSlang || [];
+        if (!slangList.includes(term)) {
+            slangList.push(term);
+            chrome.storage.local.set({ customSlang: slangList }, () => {
+                updateSlangListDisplay(slangList);
+                slangInput.value = '';
+                notifyContentScript();
             });
+        }
+    });
+}
+
+function removeSlangTerm(term) {
+    chrome.storage.local.get(['customSlang'], (result) => {
+        let slangList = result.customSlang || [];
+        slangList = slangList.filter(t => t !== term);
+        chrome.storage.local.set({ customSlang: slangList }, () => {
+            updateSlangListDisplay(slangList);
+            notifyContentScript();
+        });
+    });
+}
+
+function notifyContentScript() {
+    chrome.tabs.query({}, (tabs) => {
+        tabs.forEach(tab => {
+            if (tab.id) {
+                chrome.tabs.sendMessage(tab.id, { action: 'updateSlang' });
+            }
         });
     });
 }

@@ -52,22 +52,12 @@ class BrainRotDetector {
             { threshold: 70, label: 'W Aura' },
             { threshold: 50, label: 'Mid Aura' },
             { threshold: 30, label: 'Lowkey Aura' },
-            { threshold: 0, label: 'No Aura' }
+            { threshold: 0, label: 'L Aura' }
         ];
         this.isScanning = false;
         this.initialized = false;
+        this.customSlang = [];
 
-        // Handle overlay close messages
-        window.addEventListener('message', (event) => {
-            if (event.data === 'closeMeme') {
-                this.removeOverlay('meme-overlay.html');
-            }
-            if (event.data === 'closeGrass') {
-                this.removeOverlay('touch-grass.html');
-            }
-        });
-
-        // Setup input monitoring
         this.setupInputMonitoring();
     }
 
@@ -75,13 +65,14 @@ class BrainRotDetector {
         if (this.initialized) return;
 
         await this.loadSettings();
+        await this.loadCustomSlang();
         this.setupMessageListener();
 
         // Special handling for LinkedIn
         if (window.location.hostname.includes('linkedin.com')) {
             await new Promise(resolve => {
                 const checkFeed = () => {
-                    if (document.querySelector('.core-rail, .feed-shared-update-v2')) {
+                    if (document.querySelector('.scaffold-finite-scroll, .core-rail, .feed-shared-update-v2')) {
                         resolve();
                     } else {
                         setTimeout(checkFeed, 500);
@@ -101,6 +92,42 @@ class BrainRotDetector {
         }
     }
 
+    loadCustomSlang() {
+        return new Promise((resolve) => {
+            chrome.storage.local.get(['customSlang'], (result) => {
+                this.customSlang = result.customSlang || [];
+                this.updateMemeVocab();
+                resolve();
+            });
+        });
+    }
+
+    updateMemeVocab() {
+        this.memeVocab = [
+            'fr fr', 'no cap', 'bussin', 'skibidi', 'aura',
+            'gyatt', 'based', 'sheesh', 'sigma', 'rizz',
+            'grimace shake', 'still water', 'fanum tax', 'those who know', 'ohio',
+            ...this.customSlang
+        ];
+
+        this.slangSuggestions = {
+            'fr': ['fr fr', 'frfr'],
+            'no': ['no cap', 'no shot'],
+            'bu': ['bussin'],
+        };
+
+        // Add custom slangs to suggestions based on their prefixes
+        this.customSlang.forEach(term => {
+            const prefix = term.substring(0, 2).toLowerCase();
+            if (!this.slangSuggestions[prefix]) {
+                this.slangSuggestions[prefix] = [];
+            }
+            if (!this.slangSuggestions[prefix].includes(term)) {
+                this.slangSuggestions[prefix].push(term);
+            }
+        });
+    }
+
     setupMessageListener() {
         if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.onMessage) {
             chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
@@ -110,6 +137,9 @@ class BrainRotDetector {
                 }
                 if (request.action === 'getStats') {
                     sendResponse({ stats: this.stats });
+                }
+                if (request.action === 'updateSlang') {
+                    this.loadCustomSlang();
                 }
                 return true;
             });
@@ -206,7 +236,7 @@ class BrainRotDetector {
 
         return {
             score: auraScore,
-            label: auraCategory ? auraCategory.label : 'No Aura'
+            label: auraCategory ? auraCategory.label : 'L Aura'
         };
     }
 
@@ -223,9 +253,9 @@ class BrainRotDetector {
 
                 if (timeSpent >= 5) {
                     if (domain.includes('linkedin.com')) {
-                        this.showOverlay();
-                    } else if (domain.includes('facebook.com') || domain.includes('instagram.com') || domain.includes('twitter.com')) {
-                        this.showOverlay('touch-grass.html');
+                        this.showMemeOverlay();
+                    } else if (domain.includes('facebook.com') || domain.includes('instagram.com')) {
+                        this.showTouchGrassOverlay();
                     }
                 }
                 this.updateStats();
@@ -331,40 +361,84 @@ class BrainRotDetector {
         document.head.appendChild(style);
     }
 
-    showOverlay() {
-        this.showMemeOverlay();
-    }
+    showTouchGrassOverlay() {
+        // Remove existing overlay if any
+        const existingOverlay = document.getElementById('touch-grass-overlay');
+        if (existingOverlay) existingOverlay.remove();
 
-    showOverlay(page) {
-        if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.getURL) {
-            chrome.storage.local.get(['lastOverlayShow'], (result) => {
-                const lastShow = result.lastOverlayShow || 0;
-                const now = Date.now();
+        // Create overlay elements
+        const overlay = document.createElement('div');
+        overlay.id = 'touch-grass-overlay';
+        overlay.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.95);
+            z-index: 99999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: fadeIn 0.3s ease-in-out;
+        `;
 
-                if (now - lastShow >= 30 * 60 * 1000) {
-                    const overlay = document.createElement('iframe');
-                    overlay.src = chrome.runtime.getURL(page);
-                    overlay.style.cssText = `
-                        position: fixed;
-                        top: 0;
-                        left: 0;
-                        width: 100%;
-                        height: 100%;
-                        border: none;
-                        z-index: 99999;
-                        background: transparent;
-                    `;
+        const container = document.createElement('div');
+        container.style.cssText = `
+            background: #2a2a2a;
+            padding: 30px;
+            border-radius: 20px;
+            text-align: center;
+            max-width: 500px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
+            transform: scale(0.9);
+            animation: popIn 0.4s ease-out forwards;
+        `;
 
-                    document.body.appendChild(overlay);
-                    chrome.storage.local.set({ lastOverlayShow: now });
-                }
-            });
-        }
-    }
+        const title = document.createElement('h2');
+        title.textContent = 'Time to Touch Grass!';
+        title.style.cssText = `
+            color: #fff;
+            margin: 20px 0;
+            font-size: 24px;
+        `;
 
-    removeOverlay(page) {
-        const overlay = document.querySelector(`iframe[src*="${page}"]`);
-        if (overlay) overlay.remove();
+        const image = document.createElement('img');
+        image.src = chrome.runtime.getURL('grass.png');
+        image.alt = 'Touch Grass';
+        image.style.cssText = `
+            width: 100%;
+            max-width: 360px;
+            border-radius: 12px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            transition: transform 0.3s ease;
+        `;
+        image.addEventListener('mouseover', () => {
+            image.style.transform = 'scale(1.02)';
+        });
+        image.addEventListener('mouseout', () => {
+            image.style.transform = 'scale(1)';
+        });
+
+        // Append elements
+        container.appendChild(title);
+        container.appendChild(image);
+        overlay.appendChild(container);
+        document.body.appendChild(overlay);
+
+        // Add animations
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes fadeIn {
+                from { opacity: 0; }
+                to { opacity: 1; }
+            }
+            @keyframes popIn {
+                from { opacity: 0; transform: scale(0.8); }
+                to { opacity: 1; transform: scale(1); }
+            }
+        `;
+        document.head.appendChild(style);
     }
 
     setupInputMonitoring() {
@@ -464,8 +538,11 @@ class BrainRotDetector {
         if (this.observer) {
             this.observer.disconnect();
         }
-        this.removeOverlay('meme-overlay.html');
-        this.removeOverlay('touch-grass.html');
+        const memeOverlay = document.getElementById('meme-overlay');
+        if (memeOverlay) memeOverlay.remove();
+
+        const grassOverlay = document.getElementById('touch-grass-overlay');
+        if (grassOverlay) grassOverlay.remove();
     }
 }
 

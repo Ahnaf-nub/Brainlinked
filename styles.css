@@ -122,9 +122,11 @@ body[data-theme="dark"] .brainrot-container {
 
 .stats-grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: 1fr;  /* Change to single column */
   gap: 16px;
   margin-top: 16px;
+  justify-items: center;  /* Center items horizontally */
+  text-align: center;    /* Center text within items */
 }
 
 .stat-item {
@@ -132,6 +134,8 @@ body[data-theme="dark"] .brainrot-container {
   padding: 16px;
   border-radius: 12px;
   backdrop-filter: blur(8px);
+  width: 100%;          /* Make items full width */
+  max-width: 250px;     /* Limit maximum width */
 }
 
 .stat-label {
@@ -305,4 +309,90 @@ body[data-theme="dark"] .brainrot-container {
 [data-theme="dark"] .brainrot-suggestions {
   background: var(--bg-dark);
   border-color: var(--primary);
+}
+
+.custom-slang {
+    margin-top: 24px;
+}
+
+.custom-slang h2 {
+    font-size: 1.5rem;
+    margin-bottom: 16px;
+    color: var(--primary);
+    text-align: center;
+}
+
+.slang-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: center;
+}
+
+.slang-term {
+    background: linear-gradient(45deg, #6a85b6, #bac8e0);
+    color: #fff;
+    padding: 8px 12px;
+    border-radius: 20px;
+    display: flex;
+    align-items: center;
+    font-weight: bold;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+}
+
+.slang-term button {
+    background: none;
+    border: none;
+    color: #fff;
+    margin-left: 8px;
+    cursor: pointer;
+    font-size: 1.2rem;
+}
+
+.slang-term button:hover {
+    color: #ff6b6b;
+}
+
+.add-slang-form {
+    display: flex;
+    gap: 8px;
+    margin-top: 16px;
+    justify-content: center;
+}
+
+.add-slang-form input {
+    flex: 1;
+    max-width: 300px;
+    padding: 10px 16px;
+    border: 2px solid var(--primary);
+    border-radius: 30px;
+    font-size: 1rem;
+    outline: none;
+    transition: all 0.3s ease;
+}
+
+.add-slang-form input:focus {
+    border-color: #6a85b6;
+    box-shadow: 0 0 5px rgba(106, 133, 182, 0.5);
+}
+
+.add-slang-form button {
+    padding: 0 16px;
+    background: var(--primary);
+    color: #fff;
+    border: none;
+    border-radius: 30px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.3s ease;
+}
+
+.add-slang-form button:hover {
+    background: #6a85b6;
+}
+
+.add-icon {
+    font-size: 1.5rem;
 }
