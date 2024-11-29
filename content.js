@@ -223,14 +223,116 @@ class BrainRotDetector {
 
                 if (timeSpent >= 5) {
                     if (domain.includes('linkedin.com')) {
-                        this.showOverlay('meme-overlay.html');
-                    } else if (domain.includes('facebook.com') || domain.includes('instagram.com')) {
+                        this.showOverlay();
+                    } else if (domain.includes('facebook.com') || domain.includes('instagram.com') || domain.includes('twitter.com')) {
                         this.showOverlay('touch-grass.html');
                     }
                 }
                 this.updateStats();
             }
         }, 60000);
+    }
+
+    showMemeOverlay() {
+        // Remove existing overlay if any
+        const existingOverlay = document.getElementById('meme-overlay');
+        if (existingOverlay) existingOverlay.remove();
+
+        // Create overlay elements
+        const overlay = document.createElement('div');
+        overlay.id = 'meme-overlay';
+        overlay.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.95);
+            z-index: 99999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: fadeIn 0.3s ease-in-out;
+        `;
+
+        const container = document.createElement('div');
+        container.style.cssText = `
+            background: #2a2a2a;
+            padding: 30px;
+            border-radius: 20px;
+            text-align: center;
+            max-width: 500px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
+            transform: scale(0.9);
+            animation: popIn 0.4s ease-out forwards;
+        `;
+
+        const title = document.createElement('h2');
+        title.textContent = 'Why So Serious? Just Be a Lowkey Chill Guy';
+        title.style.cssText = `
+            color: #fff;
+            margin: 20px 0;
+            font-size: 24px;
+        `;
+
+        const image = document.createElement('img');
+        image.src = chrome.runtime.getURL('chill.png');
+        image.alt = 'meme';
+        image.style.cssText = `
+            width: 100%;
+            max-width: 360px;
+            border-radius: 12px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            transition: transform 0.3s ease;
+        `;
+        image.addEventListener('mouseover', () => {
+            image.style.transform = 'scale(1.02)';
+        });
+        image.addEventListener('mouseout', () => {
+            image.style.transform = 'scale(1)';
+        });
+
+        const messages = [
+            "There's no rush, dude. You're not behind. Time's not working against you; it's working with you. Slow down, feel the pace of your life. Everything will happen right on time. Life moves in cycles, bro. Good days, bad days—they all cycle through. Winter doesn't mean the sun's gone forever. Just means spring's around the corner. The sun always comes back, bro. Keep acing!",
+            "Life's not a competition, dude. Don't beat yourself up. Be kind to yourself. You're doing the best you can. Take it easy, you're good. Just chill.",
+            "Remember, bro, it's not about the destination, it's about the journey. Enjoy every step you take, even the small ones. They all lead to something great.",
+            "Hey, it's okay to take a break. Rest is just as important as hustle. Recharge, refocus, and come back stronger. You've got this!",
+            "Don't sweat the small stuff, dude. Focus on what really matters and let go of the rest. Life's too short to stress over things you can't control."
+        ];
+
+        const message = document.createElement('p');
+        message.textContent = messages[Math.floor(Math.random() * messages.length)];
+        message.style.cssText = `
+            color: #d8d6d6;
+            line-height: 1.5;
+            margin-top: 20px;
+            font-size: 17px;
+        `;
+
+        // Append elements
+        container.appendChild(title);
+        container.appendChild(image);
+        container.appendChild(message);
+        overlay.appendChild(container);
+        document.body.appendChild(overlay);
+
+        // Add animations
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes fadeIn {
+                from { opacity: 0; }
+                to { opacity: 1; }
+            }
+            @keyframes popIn {
+                from { opacity: 0; transform: scale(0.8); }
+                to { opacity: 1; transform: scale(1); }
+            }
+        `;
+        document.head.appendChild(style);
+    }
+
+    showOverlay() {
+        this.showMemeOverlay();
     }
 
     showOverlay(page) {

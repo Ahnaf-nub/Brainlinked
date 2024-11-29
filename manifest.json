@@ -1,6 +1,6 @@
 {
     "manifest_version": 3,
-    "name": "Brain Rot Detector",
+    "name": "Neurot",
     "version": "1.0",
     "description": "A Chrome extension to block hustle culture posts and improve productivity.",
     "permissions": [
@@ -24,7 +24,11 @@
     ],
     "web_accessible_resources": [
         {
-            "resources": ["meme-overlay.html", "touch-grass.html", "chill.png", "grass.png"],
+            "resources": [
+                "chill.png",
+                "touch-grass.html",
+                "grass.png"
+            ],
             "matches": ["<all_urls>"]
         }
     ]
