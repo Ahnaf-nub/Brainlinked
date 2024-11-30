@@ -36,6 +36,26 @@
             </div>
         </div>
 
+        <!-- Add to popup.html before the custom slang section -->
+        <div class="custom-slang">
+            <h2>Time Limit Settings</h2>
+            <div class="setting-item">
+                <div class="time-input">
+                    <input 
+                        type="number" 
+                        id="time-limit" 
+                        min="5" 
+                        max="120" 
+                        class="time-limit-input"
+                        placeholder="Default: 5">
+                    <button id="save-time" class="save-btn">Save</button>
+                </div>
+                <div class="current-limit">
+                    Current: <span id="current-time-limit">5</span> minutes
+                </div>
+            </div>
+        </div>
+
         <!-- Custom Slang Dictionary -->
         <div class="custom-slang">
             <h2>Custom Slang Dictionary</h2>

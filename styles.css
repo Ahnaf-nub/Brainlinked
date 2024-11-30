@@ -403,3 +403,46 @@ body[data-theme="dark"] .brainrot-container {
 .add-icon {
     font-size: 1rem;
 }
+
+.time-input {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.time-limit-input {
+    flex: 1;
+    padding: 8px 12px;
+    border: 2px solid var(--primary);
+    border-radius: 8px;
+    font-size: 1rem;
+    outline: none;
+    transition: all 0.3s ease;
+}
+
+.time-limit-input:focus {
+    border-color: #6a85b6;
+    box-shadow: 0 0 5px rgba(106, 133, 182, 0.5);
+}
+
+.save-btn {
+    padding: 8px 16px;
+    background: var(--primary);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.save-btn:hover {
+    background: var(--primary-light);
+    transform: translateY(-2px);
+}
+
+.current-limit {
+    margin-top: 8px;
+    font-size: 0.875rem;
+    color: var(--text-secondary-dark);
+}

@@ -19,7 +19,9 @@ class BrainRotDetector {
         this.socialMediaDomains = {
             'linkedin.com': 'LinkedIn',
             'facebook.com': 'Facebook',
-            'instagram.com': 'Instagram'
+            'www.facebook.com': 'Facebook',
+            'instagram.com': 'Instagram',
+            'www.instagram.com': 'Instagram'
         };
         this.slangSuggestions = {
             'fr': ['fr fr', 'frfr'],
@@ -57,6 +59,7 @@ class BrainRotDetector {
         this.isScanning = false;
         this.initialized = false;
         this.customSlang = [];
+        this.timeLimit = 5; // Default time limit
 
         this.setupInputMonitoring();
     }
@@ -68,7 +71,6 @@ class BrainRotDetector {
         await this.loadCustomSlang();
         this.setupMessageListener();
 
-        // Special handling for LinkedIn
         if (window.location.hostname.includes('linkedin.com')) {
             await new Promise(resolve => {
                 const checkFeed = () => {
@@ -80,6 +82,8 @@ class BrainRotDetector {
                 };
                 checkFeed();
             });
+        } else if (window.location.hostname.includes('instagram.com')|| window.location.hostname.includes('facebook.com')) {
+            await new Promise(resolve => setTimeout(resolve, 2000)); // Wait for dynamic content
         }
 
         try {
@@ -87,7 +91,6 @@ class BrainRotDetector {
             this.trackTimeSpent();
             this.initialized = true;
         } catch (error) {
-            console.warn('BrainRotDetector: Initialization failed', error);
             this.initialized = false;
         }
     }
@@ -212,7 +215,7 @@ class BrainRotDetector {
         let auraScore = 0;
 
         // Base score from slang usage
-        auraScore += Math.min(50, this.stats.slangUsed * 2);
+        auraScore += Math.min(50, this.stats.slangUsed * 0.8);
 
         // Weighted score based on specific slang types
         Object.entries(this.stats.slangTypes || {}).forEach(([word, count]) => {
@@ -253,16 +256,16 @@ class BrainRotDetector {
                 }
                 this.stats.siteStats[baseDomain].timeSpent = timeSpent;
 
-                if (timeSpent >= 5) {
-                    if (baseDomain.includes('linkedin.com')) {
+                if (timeSpent >= this.timeLimit) {
+                    if (baseDomain === 'linkedin.com') {
                         this.showMemeOverlay();
-                    } else if (baseDomain.includes('facebook.com') || baseDomain.includes('instagram.com')) {
+                    } else if (baseDomain === 'facebook.com' || baseDomain === 'instagram.com') {
                         this.showTouchGrassOverlay();
                     }
                 }
                 this.updateStats();
             }
-        }, 60000); // Check every minute
+        }, 60000);
     }
 
     showMemeOverlay() {
@@ -524,9 +527,12 @@ class BrainRotDetector {
     loadSettings() {
         if (typeof chrome !== 'undefined' && chrome.storage) {
             return new Promise((resolve) => {
-                chrome.storage.local.get(['stats'], (result) => {
+                chrome.storage.local.get(['stats', 'timeLimit'], (result) => {
                     if (result.stats) {
                         this.stats = { ...this.stats, ...result.stats };
+                    }
+                    if (result.timeLimit) {
+                        this.timeLimit = result.timeLimit;
                     }
                     resolve();
                 });

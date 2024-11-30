@@ -22,6 +22,15 @@ function initializePopup() {
         document.body.setAttribute('data-theme', isDarkMode ? 'dark' : 'light');
         chrome.storage.local.set({ darkMode: isDarkMode });
     });
+
+    // Load time limit
+    chrome.storage.local.get(['timeLimit'], (result) => {
+        const timeLimit = result.timeLimit || 5;
+        document.getElementById('current-time-limit').textContent = timeLimit;
+    });
+
+    // Setup time limit save handler
+    document.getElementById('save-time').addEventListener('click', saveTimeLimit);
 }
 
 function loadStatsWithRetry() {
@@ -131,3 +140,16 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         updateStatsDisplay(request.stats);
     }
 });
+
+function saveTimeLimit() {
+    const input = document.getElementById('time-limit');
+    const value = parseInt(input.value);
+    
+    if (value >= 5 && value <= 120) {
+        chrome.storage.local.set({ timeLimit: value }, () => {
+            document.getElementById('current-time-limit').textContent = value;
+            input.value = '';
+            notifyContentScript();
+        });
+    }
+}
