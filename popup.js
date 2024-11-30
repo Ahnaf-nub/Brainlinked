@@ -30,9 +30,6 @@ function loadStatsWithRetry() {
 
         chrome.tabs.sendMessage(tabs[0].id, { action: 'getStats' }, (response) => {
             if (chrome.runtime.lastError || !response) {
-                // Content script not available in this tab
-                console.warn('Content script not found in the current tab.');
-                // Optionally load stats from storage
                 chrome.storage.local.get(['stats'], (result) => {
                     if (result.stats) {
                         updateStatsDisplay(result.stats);

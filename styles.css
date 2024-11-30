@@ -301,7 +301,7 @@ body[data-theme="dark"] .brainrot-container {
 }
 
 .brainrot-suggestion-item:hover {
-  background: var(--primary);
+  background: rgba(124, 58, 237, 0.2);
   color: white;
 }
 
@@ -377,22 +377,29 @@ body[data-theme="dark"] .brainrot-container {
 }
 
 .add-slang-form button {
-    padding: 0 16px;
-    background: var(--primary);
-    color: #fff;
+    padding: 10px 20px;
+    background: linear-gradient(135deg, #6e8efb, #a777e3);
+    color: #ffffff;
+    font-size: 1rem;
+    font-weight: 600;
     border: none;
-    border-radius: 30px;
+    border-radius: 25px;
     cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: background 0.3s ease;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(110, 142, 251, 0.4);
 }
 
 .add-slang-form button:hover {
-    background: #6a85b6;
+    background: linear-gradient(135deg, #a777e3, #6e8efb);
+    box-shadow: 0 8px 20px rgba(110, 142, 251, 0.6);
+    transform: translateY(-5px);
+}
+
+.add-slang-form button:active {
+    transform: translateY(0);
+    box-shadow: 0 4px 15px rgba(110, 142, 251, 0.4);
 }
 
 .add-icon {
-    font-size: 1.5rem;
+    font-size: 1rem;
 }

@@ -192,7 +192,7 @@ class BrainRotDetector {
             if (memeCount > 0) {
                 this.stats.slangUsed += memeCount;
                 this.stats.slangTypes = slangTypes;
-                this.stats.brainRotLevel = Math.min(100, this.stats.slangUsed * 5);
+                this.stats.brainRotLevel = Math.min(100, this.stats.slangUsed * 2);
 
                 // Calculate aura
                 const auraResult = this.calculateAuraLevel();
@@ -242,25 +242,27 @@ class BrainRotDetector {
 
     trackTimeSpent() {
         setInterval(() => {
-            const domain = window.location.hostname.replace('www.', '');
-            if (this.socialMediaDomains[domain]) {
+            const domain = window.location.hostname;
+            const baseDomain = domain.replace('www.', '');
+            
+            if (this.socialMediaDomains[domain] || this.socialMediaDomains[baseDomain]) {
                 const timeSpent = Math.floor((Date.now() - this.startTime) / 1000 / 60);
 
-                if (!this.stats.siteStats[domain]) {
-                    this.stats.siteStats[domain] = { timeSpent: 0 };
+                if (!this.stats.siteStats[baseDomain]) {
+                    this.stats.siteStats[baseDomain] = { timeSpent: 0 };
                 }
-                this.stats.siteStats[domain].timeSpent = timeSpent;
+                this.stats.siteStats[baseDomain].timeSpent = timeSpent;
 
                 if (timeSpent >= 5) {
-                    if (domain.includes('linkedin.com')) {
+                    if (baseDomain.includes('linkedin.com')) {
                         this.showMemeOverlay();
-                    } else if (domain.includes('facebook.com') || domain.includes('instagram.com')) {
+                    } else if (baseDomain.includes('facebook.com') || baseDomain.includes('instagram.com')) {
                         this.showTouchGrassOverlay();
                     }
                 }
                 this.updateStats();
             }
-        }, 60000);
+        }, 60000); // Check every minute
     }
 
     showMemeOverlay() {
