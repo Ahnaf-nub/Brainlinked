@@ -213,33 +213,46 @@ class BrainRotDetector {
 
     calculateAuraLevel() {
         let auraScore = 0;
-
-        // Base score from slang usage
         auraScore += Math.min(50, this.stats.slangUsed * 0.8);
-
-        // Weighted score based on specific slang types
         Object.entries(this.stats.slangTypes || {}).forEach(([word, count]) => {
             if (this.auraWeights[word]) {
                 auraScore += count * this.auraWeights[word];
             }
         });
 
-        // Penalty for excessive social media time
+        // Social media time impact (penalty after 30 mins)
         const totalSocialTime = Object.values(this.stats.siteStats)
             .reduce((sum, site) => sum + (site.timeSpent || 0), 0);
-        const timePenalty = Math.max(0, (totalSocialTime - 30) * 0.5); // Penalty after 30 mins
+        
+        // Progressive penalty system
+        let timePenalty = 0;
+        if (totalSocialTime > 20) {
+            timePenalty += Math.min(20, totalSocialTime - 20) * 0.5;
+            if (totalSocialTime > 10) {
+                timePenalty += (totalSocialTime - 10) * 1;
+            }
+        }
+
+        // Apply penalty but keep minimum score of 0
         auraScore = Math.max(0, auraScore - timePenalty);
 
         // Cap at 100
         auraScore = Math.min(100, auraScore);
 
-        // Get aura category
-        const auraCategory = this.auraCategories
-            .find(cat => auraScore >= cat.threshold);
+        // Determine aura category based on score
+        const auraCategories = [
+            { threshold: 90, label: 'Infinite Aura' },  // Elite status
+            { threshold: 70, label: 'W Aura' },        // Above average
+            { threshold: 50, label: 'Mid Aura' },      // Average
+            { threshold: 30, label: 'Lowkey Aura' },   // Below average
+            { threshold: 0, label: 'L Aura' }          // Default/Low status
+        ];
+
+        const auraCategory = auraCategories.find(cat => auraScore >= cat.threshold);
 
         return {
             score: auraScore,
-            label: auraCategory ? auraCategory.label : 'L Aura'
+            label: auraCategory ? auraCategory.label : 'L Aura' // Default to L Aura if no threshold met
         };
     }
 
