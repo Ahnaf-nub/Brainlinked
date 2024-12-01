@@ -8,7 +8,9 @@ chrome.runtime.onInstalled.addListener(() => {
                     siteStats: {},
                     slangUsed: 0,
                     brainRotLevel: 0,
-                    brainCells: 3
+                    brainCells: 3,
+                    auraScore: 70,
+                    auraLabel: 'W Aura'
                 }
             });
         }
